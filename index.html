@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Latihan Soal Interaktif - Histologi Mata</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #16a34a;
+            --success-bg: #f0fdf4;
+            --error: #dc2626;
+            --error-bg: #fef2f2;
+            --neutral-dark: #1f2937;
+            --neutral-light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            color: var(--neutral-dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .quiz-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            background: var(--neutral-light);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .question-card {
+            display: none;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            max-height: 400px;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            background: #eaeaea;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+        }
+
+        .image-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .image-hint {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        .instructions {
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #4b5563;
+        }
+
+        .sub-questions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .sub-question-item {
+            background: var(--neutral-light);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .sub-question-text {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .feedback {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .feedback.correct {
+            display: block;
+            background-color: var(--success-bg);
+            color: var(--success);
+            border: 1px solid #bbf7d0;
+        }
+
+        .feedback.wrong {
+            display: block;
+            background-color: var(--error-bg);
+            color: var(--error);
+            border: 1px solid #fecaca;
+        }
+
+        .feedback .correct-answer {
+            font-weight: bold;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .navigation-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:not(:disabled):hover {
+            background-color: #d1d5db;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:not(:disabled):hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:not(:disabled):hover {
+            background-color: #15803d;
+        }
+
+        /* Lightbox / Modal Style */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        .lightbox-content-wrapper {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .lightbox img {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+            cursor: grab;
+        }
+
+        .lightbox img:active {
+            cursor: grabbing;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 10001;
+        }
+
+        .lightbox-close:hover {
+            color: #bbb;
+        }
+
+        .lightbox-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            z-index: 10001;
+        }
+
+        .lightbox-btn {
+            background: white;
+            color: black;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .lightbox-btn:hover {
+            background: #e5e7eb;
+        }
+
+        /* Result Dashboard */
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--neutral-light);
+            border: 8px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+        }
+
+        .score-num {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media(max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .navigation-controls { flex-direction: column; gap: 10px; }
+            .navigation-controls button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Ujian Mandiri Interaktif</h1>
+        <p>Histologi Organ Mata & Struktur Adneksa</p>
+    </header>
+
+    <div id="quiz-wrapper">
+        <div class="quiz-progress">
+            <span id="progress-text">Soal 1 dari 12</span>
+            <span id="score-live-text">Skor Penyelesaian: -</span>
+        </div>
+
+        <div id="questions-container"></div>
+
+        <div class="navigation-controls">
+            <button class="btn-secondary" id="btn-prev" onclick="changeQuestion(-1)" disabled>Sebelumnya</button>
+            <button class="btn-success" id="btn-check" onclick="checkCurrentQuestion()">Cek Jawaban</button>
+            <button class="btn-primary" id="btn-next" onclick="changeQuestion(1)">Selanjutnya</button>
+        </div>
+    </div>
+
+    <div class="result-screen" id="result-wrapper">
+        <h2>Latihan Selesai!</h2>
+        <div class="score-circle">
+            <span class="score-num" id="final-score">0</span>
+            <span class="score-label">Skor Total</span>
+        </div>
+        <p id="result-summary" style="margin-bottom: 25px; color:#4b5563;"></p>
+        <button class="btn-primary" onclick="restartQuiz()">Kerjakan Ulang Soal</button>
+    </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <span class="lightbox-close" onclick="forceCloseLightbox()">&times;</span>
+    <div class="lightbox-content-wrapper">
+        <img id="lightbox-img" src="" alt="Zoomed Histology" draggable="false">
+    </div>
+    <div class="lightbox-controls">
+        <button class="lightbox-btn" onclick="zoomLightbox(0.1, event)">+</button>
+        <button class="lightbox-btn" onclick="zoomLightbox(-0.1, event)">-</button>
+        <button class="lightbox-btn" onclick="resetZoomLightbox(event)">↺</button>
+    </div>
+</div>
+
+<script>
+    // Database Soal Asli Terintegrasi
+    const quizData = [
+        {
+            no: 1,
+            img: "https://i.ibb.co.com/ynJC55hR/image.png",
+            subs: [
+                { id: "a", q: "Tonjolan ditunjuk panah hitam?", ans: "Processus ciliaris", alt: ["prosesus siliaris", "processus ciliaris", "proc ciliaris", "tonjolan siliaris"] },
+                { id: "b", q: "Melekat pada bentukan?", ans: "Corpus ciliaris", alt: ["korpus siliaris", "corpus ciliaris", "corpus ciliate", "badan siliar"] },
+                { id: "c", q: "Bentukan merah seperti tali ditunjuk panah biru?", ans: "Suspensorium", alt: ["suspensorium", "ligamentum suspensorium", "ligamentum suspensorium lentis", "zonula zinnii", "zonula zinn"] }
+            ]
+        },
+        {
+            no: 2,
+            img: "https://i.ibb.co.com/bM4zQSjW/image.png",
+            subs: [
+                { id: "a", q: "Ruangan ditunjuk panah hitam?", ans: "Camera oculi anterior", alt: ["coa", "camera oculi anterior", "kamera okuli anterior", "bilik mata depan", "bilik anterior"] },
+                { id: "b", q: "Ruangan ditunjuk panah merah?", ans: "Camera oculi posterior", alt: ["cop", "camera oculi posterior", "kamera okuli posterior", "bilik mata belakang", "bilik posterior"] },
+                { id: "c", q: "Bentukan ditunjuk panah biru?", ans: "Cornea", alt: ["cornea", "kornea", "selaput bening"] },
+                { id: "d", q: "Bentukan ditunjuk panah hijau?", ans: "Iris", alt: ["iris", "selaput pelangi"] }
+            ]
+        },
+        {
+            no: 3,
+            img: "https://i.ibb.co.com/k6wKjs0C/image.png",
+            subs: [
+                { id: "a", q: "Lapisan ditunjuk panah hitam?", ans: "Stratum nuclear interna", alt: ["stratum nuclear interna", "stratum nucleare internum", "inner nuclear layer", "lapisan inti dalam"] },
+                { id: "b", q: "Lapisan ditunjuk panah hijau?", ans: "Koroid", alt: ["koroid", "choroidea", "choroid", "tunica vasculosa"] },
+                { id: "c", q: "Lapisan ditunjuk panah merah?", ans: "Sclera", alt: ["sclera", "sklera", "tunica fibrosa"] },
+                { id: "d", q: "Sediaan?", ans: "Mata", alt: ["mata", "oculus", "bulbus oculi", "organ mata"] }
+            ]
+        },
+        {
+            no: 4,
+            img: "https://i.ibb.co.com/k6wKjs0C/image.png",
+            subs: [
+                { id: "a", q: "Lapisan garis ujung petunjuk?", ans: "Stratum limitans externa", alt: ["stratum limitans externa", "outer limiting membrane", "membrana limitans externa", "lapisan pembatas luar"] },
+                { id: "b", q: "Terdapat di antara lapisan kiri (Stratum Nuclear Eksterna) dan lapisan kanan (Lapisan Kerucut dan batang)? *Isi jawaban terpisah dengan koma atau kata hubung*", ans: "Stratum Nuclear Eksterna & Lapisan Kerucut dan batang", alt: ["stratum nuclear eksterna", "lapisan kerucut dan batang", "photoreceptor layer", "outer nuclear layer"] },
+                { id: "c", q: "Bagian dari seluruh lapisan?", ans: "Retina pars optica", alt: ["retina pars optica", "pars optica retinae", "retina", "pars optica"] }
+            ]
+        },
+        {
+            no: 5,
+            img: "https://i.ibb.co.com/9HPYTMtG/image.png",
+            subs: [
+                { id: "a", q: "Daerah yang ditunjuk disebut?", ans: "Retina pars ciliaris", alt: ["retina pars ciliaris", "pars ciliaris retinae", "pars ciliaris"] },
+                { id: "b", q: "Merupakan batas dari lapisan kiri (Retina pars optica) dan lapisan kanan (Retina pars ciliaris) *Ketik nama daerah transisi/ora serrata*", ans: "Ora serrata", alt: ["ora serrata", "retina pars optica", "retina pars ciliaris"] }
+            ]
+        },
+        {
+            no: 6,
+            img: "https://i.ibb.co.com/q3XrHPLZ/image.png",
+            subs: [
+                { id: "a", q: "Lapisan ditunjuk panah hitam?", ans: "Koroid", alt: ["koroid", "choroid", "choroidea"] },
+                { id: "b", q: "Lapisan ditunjuk panah biru?", ans: "Stratum koriokapiler", alt: ["stratum koriokapiler", "lamina choriocapillaris", "choriocapillaris", "koriokapilaris"] },
+                { id: "c", q: "Merupakan bagian dari seluruh lapisan?", ans: "Koroid", alt: ["koroid", "choroid", "choroidea", "tunica vasculosa"] }
+            ]
+        },
+        {
+            no: 7,
+            img: "https://i.ibb.co.com/VYSC0Z0h/image.png",
+            subs: [
+                { id: "a", q: "Lapisan ditunjuk panah hitam?", ans: "Substansia propria", alt: ["substansia propria", "stroma cornea", "stroma kornea", "substantia propria"] },
+                { id: "b", q: "Lapisan berupa garis ditunjuk panah hijau?", ans: "Membran bowman", alt: ["membran bowman", "membrana bowman", "lamina limitans anterior", "bowman membrane"] },
+                { id: "c", q: "Lapisan ditunjuk panah biru?", ans: "Endotel cornea", alt: ["endotel cornea", "endotelium kornea", "corneal endothelium", "epitel posterior kornea"] },
+                { id: "d", q: "Bagian dari seluruh bentukan?", ans: "Kornea", alt: ["kornea", "cornea"] }
+            ]
+        },
+        {
+            no: 8,
+            img: "https://i.ibb.co.com/Fqyp2tfx/image.png",
+            subs: [
+                { id: "a", q: "Lapisan ditunjuk panah hitam?", ans: "Lapisan sel-sel ganglion", alt: ["lapisan sel-sel ganglion", "stratum ganglionare", "ganglion cell layer", "sel ganglion"] },
+                { id: "b", q: "Lapisan ditunjuk panah hijau?", ans: "Stratum pleksiform interna", alt: ["stratum pleksiform interna", "inner plexiform layer", "stratum plexiforme internum"] },
+                { id: "c", q: "Lapisan ditunjuk panah biru?", ans: "Lapisan sabut-sabut saraf", alt: ["lapisan sabut-sabut saraf", "stratum opticum", "nerve fiber layer", "lapisan serat saraf"] },
+                { id: "d", q: "Bagian dari seluruh lapisan?", ans: "Retina pars optica", alt: ["retina pars optica", "pars optica retinae", "retina"] }
+            ]
+        },
+        {
+            no: 9,
+            img: "https://i.ibb.co.com/mPDQwch/image.png",
+            subs: [
+                { id: "a", q: "Bentukan ditunjuk panah hitam?", ans: "Musculus sphincter pupillae", alt: ["musculus sphincter pupillae", "m. sphincter pupillae", "sfingter pupil", "otot sfingter pupil"] },
+                { id: "b", q: "Bentukan merah memanjang ditunjuk panah biru adalah?", ans: "Musculus dilator pupillae", alt: ["musculus dilator pupillae", "m. dilator pupillae", "dilator pupil", "otot dilator pupil"] },
+                { id: "c", q: "Bentukan ditunjuk panah hijau?", ans: "Lensa kornea", alt: ["lensa kornea", "lensa", "lens"] }
+            ]
+        },
+        {
+            no: 10,
+            img: "https://i.ibb.co.com/CKWxbg39/image.png",
+            subs: [
+                { id: "a", q: "Bentukan yang ditunjuk panah hitam adalah?", ans: "Kel. Meibom", alt: ["kel meibom", "kelenjar meibom", "glandula meibom", "tarsal gland", "glandula tarsalis"] },
+                { id: "b", q: "Terdapat pada sediaan?", ans: "Palpebra", alt: ["palpebra", "kelopak mata", "eyelid"] }
+            ]
+        },
+        {
+            no: 11,
+            img: "https://i.ibb.co.com/vCdpsVt6/image.png",
+            subs: [
+                { id: "a", q: "Cekungan yang ditunjuk?", ans: "Excavatio papilla n. opticus", alt: ["excavatio papilla n opticus", "excavatio papillae", "optic cup", "fisiologis cup", "cekungan diskus optik"] },
+                { id: "b", q: "Bentukan besar di sebelah kiri petunjuk adalah?", ans: "n. opticus", alt: ["n opticus", "nervus opticus", "nervus optik", "saraf optik", "n. ii", "n.opticus"] }
+            ]
+        },
+        {
+            no: 12,
+            img: "https://i.ibb.co.com/CKYz8TTB/image.png",
+            subs: [
+                { id: "a", q: "Lumen ditunjuk panah hitam?", ans: "Canal Schlem", alt: ["canal schlem", "sinus venosus sclerae", "kanalis schlemm", "schlemm's canal", "canal of schlemm"] },
+                { id: "b", q: "Garis-garis tipis yang ditunjuk panah biru adalah?", ans: "Trabecular meshwork", alt: ["trabecular meshwork", "trabekula meshwork", "reticulum trabeculare"] },
+                { id: "c", q: "Celah-celah di antara garis tipis tersebut?", ans: "Spatium Fontana", alt: ["spatium fontana", "ruang fontana", "spaces of fontana", "spatia fontana"] }
+            ]
+        }
+    ];
+
+    let currentIdx = 0;
+    const userAnswers = {}; // Format: { "q_1_a": { text: "...", isChecked: false, isCorrect: false } }
+
+    // Inisialisasi Aplikasi
+    function initQuiz() {
+        const container = document.getElementById('questions-container');
+        container.innerHTML = '';
+
+        quizData.forEach((data, index) => {
+            const card = document.createElement('div');
+            card.className = `question-card ${index === 0 ? 'active' : ''}`;
+            card.id = `card-${index}`;
+
+            let subsHTML = '';
+            data.subs.forEach(sub => {
+                const inputId = `q_${data.no}_${sub.id}`;
+                subsHTML += `
+                    <div class="sub-question-item">
+                        <span class="sub-question-text">${sub.id.toUpperCase()}. ${sub.q}</span>
+                        <div class="input-group">
+                            <input type="text" id="${inputId}" placeholder="Ketik jawaban di sini..." autocomplete="off" onkeydown="handleInputKeyDown(event)">
+                            <div class="feedback" id="feedback-${inputId}"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="instructions">Perhatikan gambar sediaan histologi berikut untuk menjawab soal No. ${data.no}:</div>
+                <div class="image-container">
+                    <span class="image-loading" id="loader-${index}">Memuat Gambar Histologi...</span>
+                    <img src="${data.img}" alt="Soal ${data.no}" onload="document.getElementById('loader-${index}').style.display='none'" onclick="openLightbox('${data.img}')" loading="lazy">
+                    <div class="image-hint">Klik untuk perbesar & zoom</div>
+                </div>
+                <div class="sub-questions">
+                    ${subsHTML}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        updateNavigation();
+    }
+
+    // Manajemen Navigasi
+    function changeQuestion(step) {
+        // Simpan input sementara sebelum pindah halaman
+        saveCurrentInputs();
+
+        const activeCard = document.getElementById(`card-${currentIdx}`);
+        activeCard.classList.remove('active');
+
+        currentIdx += step;
+        
+        if (currentIdx >= quizData.length) {
+            showFinalResult();
+            return;
+        }
+
+        const nextCard = document.getElementById(`card-${currentIdx}`);
+        nextCard.classList.add('active');
+
+        updateNavigation();
+        restoreInputsForCurrent();
+    }
+
+    function updateNavigation() {
+        document.getElementById('btn-prev').disabled = currentIdx === 0;
+        document.getElementById('progress-text').innerText = `Soal ${currentIdx + 1} dari ${quizData.length}`;
+        
+        if (currentIdx === quizData.length - 1) {
+            document.getElementById('btn-next').innerText = "Selesai & Lihat Skor";
+        } else {
+            document.getElementById('btn-next').innerText = "Selanjutnya";
+        }
+
+        // Set status button Cek Jawaban berdasarkan apakah halaman ini sudah dikunci periksa
+        const currentQuestionData = quizData[currentIdx];
+        let alreadyChecked = true;
+        currentQuestionData.subs.forEach(sub => {
+            const id = `q_${currentQuestionData.no}_${sub.id}`;
+            if (!userAnswers[id] || !userAnswers[id].isChecked) {
+                alreadyChecked = false;
+            }
+        });
+
+        const btnCheck = document.getElementById('btn-check');
+        if (alreadyChecked) {
+            btnCheck.innerText = "Sudah Diperiksa";
+            btnCheck.disabled = true;
+        } else {
+            btnCheck.innerText = "Cek Jawaban";
+            btnCheck.disabled = false;
+        }
+    }
+
+    function saveCurrentInputs() {
+        const currentQuestionData = quizData[currentIdx];
+        currentQuestionData.subs.forEach(sub => {
+            const id = `q_${currentQuestionData.no}_${sub.id}`;
+            const inputEl = document.getElementById(id);
+            if (inputEl) {
+                if (!userAnswers[id]) userAnswers[id] = { text: "", isChecked: false, isCorrect: false };
+                if (!userAnswers[id].isChecked) {
+                    userAnswers[id].text = inputEl.value;
+                }
+            }
+        });
+    }
+
+    function restoreInputsForCurrent() {
+        const currentQuestionData = quizData[currentIdx];
+        currentQuestionData.subs.forEach(sub => {
+            const id = `q_${currentQuestionData.no}_${sub.id}`;
+            const inputEl = document.getElementById(id);
+            const feedbackEl = document.getElementById(`feedback-${id}`);
+            
+            if (userAnswers[id]) {
+                inputEl.value = userAnswers[id].text;
+                if (userAnswers[id].isChecked) {
+                    inputEl.disabled = true;
+                    feedbackEl.className = `feedback ${userAnswers[id].isCorrect ? 'correct' : 'wrong'}`;
+                    feedbackEl.innerHTML = userAnswers[id].isCorrect ? 
+                        `✓ Benar!` : 
+                        `✗ Kurang Tepat. <span class="correct-answer">Kunci: ${sub.ans}</span>`;
+                } else {
+                    inputEl.disabled = false;
+                    feedbackEl.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    function handleInputKeyDown(e) {
+        if (e.key === 'Enter') {
+            checkCurrentQuestion();
+        }
+    }
+
+    // Sistem Koreksi Cerdas (Toleransi String & Jarak Levenshtein)
+    function cleanString(str) {
+        return str.toLowerCase()
+                  .replace(/[\W_]+/g, ' ') // Ganti tanda baca/karakter aneh dengan spasi tunggal
+                  .replace(/\s+/g, ' ')     // Bersihkan double space
+                  .trim();
+    }
+
+    function getLevenshteinDistance(a, b) {
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitusi
+                        matrix[i][j - 1] + 1,     // insersi
+                        matrix[i - 1][j] + 1      // delesi
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
+    function validateAnswer(userAns, standardAns, alternativeList) {
+        const cleanUser = cleanString(userAns);
+        if (!cleanUser) return false;
+
+        // Gabungkan semua alternatif jawaban valid ke dalam satu array penentu
+        const totalValidOptions = [standardAns, ...alternativeList].map(item => cleanString(item));
+
+        for (let option of totalValidOptions) {
+            if (cleanUser === option) return true; // Cocok eksak setelah dibersihkan
+            
+            // Toleransi parsial / mengandung kata kunci esensial untuk istilah panjang
+            if (option.length > 10 && (cleanUser.includes(option) || option.includes(cleanUser))) {
+                return true;
+            }
+
+            // Hitung Jarak Levenshtein untuk mengakomodasi typo ringan (maks 1-2 huruf salah bergantung panjang kata)
+            const distance = getLevenshteinDistance(cleanUser, option);
+            const maxAllowedTypo = option.length > 12 ? 2 : (option.length > 5 ? 1 : 0);
+            if (distance <= maxAllowedTypo) return true;
+        }
+        return false;
+    }
+
+    // Aksi Cek Evaluasi Halaman Aktif
+    function checkCurrentQuestion() {
+        saveCurrentInputs();
+        const currentQuestionData = quizData[currentIdx];
+        
+        currentQuestionData.subs.forEach(sub => {
+            const id = `q_${currentQuestionData.no}_${sub.id}`;
+            const inputEl = document.getElementById(id);
+            const feedbackEl = document.getElementById(`feedback-${id}`);
+            
+            if (!userAnswers[id].isChecked) {
+                const isCorrect = validateAnswer(userAnswers[id].text, sub.ans, sub.alt);
+                userAnswers[id].isChecked = true;
+                userAnswers[id].isCorrect = isCorrect;
+                
+                inputEl.disabled = true;
+                feedbackEl.className = `feedback ${isCorrect ? 'correct' : 'wrong'}`;
+                feedbackEl.innerHTML = isCorrect ? 
+                    `✓ Benar!` : 
+                    `✗ Kurang Tepat. <span class="correct-answer">Kunci: ${sub.ans}</span>`;
+            }
+        });
+
+        calculateLiveScore();
+        updateNavigation();
+    }
+
+    function calculateLiveScore() {
+        let totalSubQuestions = 0;
+        let correctSubQuestions = 0;
+
+        quizData.forEach(q => {
+            q.subs.forEach(sub => {
+                totalSubQuestions++;
+                const id = `q_${q.no}_${sub.id}`;
+                if (userAnswers[id] && userAnswers[id].isChecked && userAnswers[id].isCorrect) {
+                    correctSubQuestions++;
+                }
+            });
+        });
+
+        const liveScoreText = document.getElementById('score-live-text');
+        liveScoreText.innerText = `Skor Terjawab: ${correctSubQuestions} / ${totalSubQuestions}`;
+        return { correct: correctSubQuestions, total: totalSubQuestions };
+    }
+
+    function showFinalResult() {
+        // Otomatis cek seluruh soal yang belum sempat ditekan tombol cek jawabannya sebelum dialihkan
+        quizData.forEach(q => {
+            q.subs.forEach(sub => {
+                const id = `q_${q.no}_${sub.id}`;
+                if (!userAnswers[id]) userAnswers[id] = { text: "", isChecked: false, isCorrect: false };
+                if (!userAnswers[id].isChecked) {
+                    userAnswers[id].isCorrect = validateAnswer(userAnswers[id].text, sub.ans, sub.alt);
+                    userAnswers[id].isChecked = true;
+                }
+            });
+        });
+
+        const stats = calculateLiveScore();
+        const finalScoreValue = Math.round((stats.correct / stats.total) * 100);
+
+        document.getElementById('quiz-wrapper').style.display = 'none';
+        const resultWrapper = document.getElementById('result-wrapper');
+        resultWrapper.style.display = 'block';
+
+        document.getElementById('final-score').innerText = finalScoreValue;
+        document.getElementById('result-summary').innerText = `Anda menjawab benar sebanyak ${stats.correct} dari total ${stats.total} poin pertanyaan struktur histologi mata.`;
+    }
+
+    function restartQuiz() {
+        // Reset status penyimpanan data pengerjaan
+        for (let key in userAnswers) {
+            delete userAnswers[key];
+        }
+        currentIdx = 0;
+        document.getElementById('quiz-wrapper').style.display = 'block';
+        document.getElementById('result-wrapper').style.display = 'none';
+        document.getElementById('score-live-text').innerText = "Skor Penyelesaian: -";
+        
+        initQuiz();
+    }
+
+    // MODAL LIGHTBOX VIEWER LOGIC (Zoom, Drag, & Pan Image)
+    let currentZoom = 1;
+    let isDragging = false;
+    let startX, startY, translateX = 0, translateY = 0;
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+
+    function openLightbox(imgSrc) {
+        lightboxImg.src = imgSrc;
+        lightbox.style.display = 'flex';
+        resetZoomLightbox();
+    }
+
+    function forceCloseLightbox() {
+        lightbox.style.display = 'none';
+    }
+
+    function closeLightbox(e) {
+        // Menutup lightbox hanya jika mengklik latar belakang hitam kosong, bukan gambar atau kontrol panel
+        if (e.target === lightbox || e.target.classList.contains('lightbox-content-wrapper')) {
+            lightbox.style.display = 'none';
+        }
+    }
+
+    function zoomLightbox(amount, event) {
+        if(event) event.stopPropagation();
+        currentZoom += amount;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 4) currentZoom = 4;
+        applyTransform();
+    }
+
+    function resetZoomLightbox(event) {
+        if(event) event.stopPropagation();
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        applyTransform();
+    }
+
+    function applyTransform() {
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    }
+
+    // Event mousedown/mousemove/mouseup untuk melakukan drag gambar saat di-zoom
+    lightboxImg.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // Menangani Zoom dengan Scroll Roda Mouse di dalam Lightbox
+    lightbox.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        zoomLightbox(delta, null);
+    }, { passive: false });
+
+
+    // Start load app
+    window.onload = initQuiz;
+</script>
+
+</body>
+</html>
